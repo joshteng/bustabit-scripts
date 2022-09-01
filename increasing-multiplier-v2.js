@@ -27,7 +27,11 @@ if (engine.gameState === "GAME_STARTING" || engine.gameState === "GAME_ENDED") {
 
 function onGameStarted() {
   const lastGame = engine.history.first();
-  const favorableCondition = pLost < config.lossPercentageThreshold.value; // should I use a more limited set like just the last 20 sets?
+
+  const last20Sets = winLoss.slice(-20);
+  const numberOfLossesLast20 = last20Sets.filter(data => data == 0);
+  const favorableCondition = (totalSets >= 20 && (numberOfLossesLast20 / 20 < config.lossPercentageThreshold.value))
+
   const startBet = lastGame.bust < config.startAfter.value;
   const continueBet = lastGame.wager && !lastGame.cashedAt && !justReset;
 
@@ -36,10 +40,10 @@ function onGameStarted() {
 
     if (favorableCondition) {
       engine.bet(roundBit(config.betAmount.value), currentPayout);
-      log("Placed", config.betAmount.value / 100, " bits bet with", currentPayout, "x payout (favorable)");
+      log("Placed", config.betAmount.value / 100, " bits bet with", currentPayout, "x payout (favorable); Balance:", userInfo.balance / 100);
     } else {
       engine.bet(roundBit(config.minBetAmount.value), currentPayout);
-      log("Placed", config.minBetAmount.value / 100, " bits bet with", currentPayout, "x payout (unfavorable)");
+      log("Placed", config.minBetAmount.value / 100, " bits bet with", currentPayout, "x payout (unfavorable); Balance:", userInfo.balance / 100);
     }
   }
 }
@@ -65,7 +69,7 @@ function onGameEnded() {
     currentPayout += config.payoutIncrement.value;
   }
 
-  if (currentPayout > config.reset.value) {
+  if (currentPayout > config.resetPayout.value) {
     winLoss.push(0);
     lostSets += 1;
     totalSets += 1;
