@@ -2,7 +2,7 @@ var config = {
   betAmount: { value: 1000, type: "balance", label: "bet" },
   startBelow: { value: 2, type: "multiplier" },
   basePayout: { value: 2, type: "multiplier" },
-  reset: { value: 4, type: "multiplier", label: "reset payout if last payout >" },
+  reset: { value: 4, type: "multiplier", label: "max payout before reset" },
   loss: {
     value: "increase",
     type: "radio",
