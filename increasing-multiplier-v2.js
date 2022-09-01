@@ -1,21 +1,21 @@
-const config = {
-  startAfter: { value: 2, type: "multiplier", label: "first bet after previous payout" },
+var config = {
+  startAfter: { value: 2, type: "multiplier", label: "first bet after previous payout <" },
   basePayout: { value: 2, type: "multiplier", label: "first bet payout" },
   payoutIncrement: { value: 1, type: "multiplier", label: "after losing, increase (addition) payout by" },
   resetPayout: { value: 5, type: "multiplier", label: "max payout before reset" },
-  lossPercentageThreshold: { value: 25, type: "multiplier", label: "don't bet if above this threshold" },
+  lossPercentageThreshold: { value: 26, type: "multiplier", label: "don't bet if above this threshold" },
   minBetAmount: { value: 100, type: "balance", label: "bet amount when loss % is above threshold" },
   betAmount: { value: 1000, type: "balance", label: "bet amount when loss % is below threshold" },
 };
 
-log("Script is running..");
+log("Script has started");
 
 const winLoss = []; // 1 means won; 0 means lost
 let currentPayout = config.basePayout.value;
 let justReset = false;
 let totalSets = 0;
 let lostSets = 0;
-let pLost = 0;
+let pLost = 100;
 
 engine.on("GAME_STARTING", onGameStarted);
 if (engine.gameState === "GAME_STARTING" || engine.gameState === "GAME_ENDED") {
@@ -27,7 +27,7 @@ if (engine.gameState === "GAME_STARTING" || engine.gameState === "GAME_ENDED") {
 
 function onGameStarted() {
   const lastGame = engine.history.first();
-  const favorableCondition = pLost < config.lossPercentageThreshold; // should I use a more limited set like just the last 20 sets?
+  const favorableCondition = pLost < config.lossPercentageThreshold.value; // should I use a more limited set like just the last 20 sets?
   const startBet = lastGame.bust < config.startAfter.value;
   const continueBet = lastGame.wager && !lastGame.cashedAt && !justReset;
 
@@ -56,11 +56,13 @@ function onGameEnded() {
   // we won..
   if (lastGame.cashedAt) {
     winLoss.push(1);
+    totalSets += 1;
+    pLost = Math.round(lostSets / totalSets * 10000) / 100;
     currentPayout = config.basePayout.value;
-    log("[WON] Total Sets: ", totalSets, "; Loss Sets: ", lostSets, "; % Loss: ", pLost, "%; Balance: ", userInfo.balance)
+    log("[WON] Total Sets: ", totalSets, "; Loss Sets: ", lostSets, "; % Loss: ", pLost, "%; Balance: ", userInfo.balance / 100)
   } else {
     // damn, looks like we lost :(
-    currentPayout += config.payoutIncrement;
+    currentPayout += config.payoutIncrement.value;
   }
 
   if (currentPayout > config.reset.value) {
@@ -68,7 +70,7 @@ function onGameEnded() {
     lostSets += 1;
     totalSets += 1;
     pLost = Math.round(lostSets / totalSets * 10000) / 100;
-    log("[LOST] Total Sets: ", totalSets, "; Loss Sets: ", lostSets, "; % Loss: ", pLost, "%; Balance: ", userInfo.balance)
+    log("[LOST] Total Sets: ", totalSets, "; Loss Sets: ", lostSets, "; % Loss: ", pLost, "%; Balance: ", userInfo.balance / 100)
     log("Reset max payout. ", currentPayout, "x beyond limit.");
     currentPayout = config.basePayout.value;
     justReset = true;
